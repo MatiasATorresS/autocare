@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>AutoCare - Gestión de Taller Mecánico</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--azul:#1a56db;--azul-d:#1e3a8a;--azul-l:#eff6ff;--gris:#f3f4f6;--gris-d:#6b7280;--gris-b:#e5e7eb;--txt:#111827;--rojo:#dc2626}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--gris);color:var(--txt);display:flex;min-height:100vh}
+nav{width:220px;background:var(--azul-d);color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+nav h1{padding:20px 16px;font-size:20px;border-bottom:1px solid rgba(255,255,255,.15)}
+nav h1 span{color:#93c5fd}
+nav ul{list-style:none;padding:10px 0}
+nav li{padding:12px 20px;cursor:pointer;font-size:14px;border-left:3px solid transparent;opacity:.85}
+nav li:hover{background:rgba(255,255,255,.08)}
+nav li.active{background:rgba(255,255,255,.12);border-left-color:#93c5fd;opacity:1;font-weight:600}
+main{flex:1;padding:24px 32px;max-width:1400px}
+h2{color:var(--azul-d);margin-bottom:16px;font-size:22px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}
+.card{background:#fff;border:1px solid var(--gris-b);border-radius:10px;padding:16px 18px}
+.card .val{font-size:26px;font-weight:700;color:var(--azul-d)}
+.card .lbl{font-size:12px;color:var(--gris-d);margin-top:4px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+.chartbox{background:#fff;border:1px solid var(--gris-b);border-radius:10px;padding:14px}
+.chartbox h3{font-size:14px;color:var(--gris-d);margin-bottom:8px}
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+input,select,textarea{padding:8px 10px;border:1px solid var(--gris-b);border-radius:6px;font-size:13px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--azul);outline-offset:-1px}
+button{background:var(--azul);color:#fff;border:none;padding:9px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+button:hover{background:var(--azul-d)}
+button.sec{background:#fff;color:var(--azul);border:1px solid var(--azul)}
+button.danger{background:var(--rojo)}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--gris-b)}
+th{background:var(--azul-l);color:var(--azul-d);text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase}
+td{padding:10px 12px;border-top:1px solid var(--gris-b);font-size:13px}
+tr:hover td{background:#fafbff}
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.b-recibido{background:#e0e7ff;color:#3730a3}
+.b-diagnostico{background:#fef3c7;color:#92400e}
+.b-repuestos{background:#fee2e2;color:#991b1b}
+.b-reparacion{background:#dbeafe;color:#1e40af}
+.b-listo{background:#d1fae5;color:#065f46}
+.b-entregado{background:#e5e7eb;color:#374151}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:100}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:24px;width:480px;max-width:92vw;max-height:88vh;overflow-y:auto}
+.modal h3{color:var(--azul-d);margin-bottom:14px}
+.form-row{margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
+.form-row label{font-size:12px;color:var(--gris-d);font-weight:600}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.view{display:none}
+.view.active{display:block}
+.actions button{padding:5px 10px;font-size:11px;margin-right:4px}
+.timeline{display:flex;align-items:center;margin:14px 0;flex-wrap:wrap;gap:0}
+.tstep{background:var(--gris-b);color:var(--gris-d);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.tstep.done{background:var(--azul);color:#fff}
+.tarrow{color:var(--gris-d);margin:0 6px}
+.alert{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:10px}
+.empty{color:var(--gris-d);font-size:13px;padding:20px;text-align:center}
+.factura .tot{font-weight:700;font-size:16px;color:var(--azul-d)}
+@media print{nav,.toolbar,.no-print{display:none!important}main{padding:0}}
+</style>
+</head>
+<body>
+
+<nav>
+<h1>🚗 Auto<span>Care</span></h1>
+<ul>
+<li data-v="dashboard" class="active">📊 Dashboard</li>
+<li data-v="clientes">👤 Clientes</li>
+<li data-v="vehiculos">🚘 Vehículos</li>
+<li data-v="ordenes">🔧 Órdenes de trabajo</li>
+<li data-v="repuestos">📦 Repuestos</li>
+<li data-v="agenda">📅 Agenda</li>
+<li data-v="estadisticas">📈 Estadísticas</li>
+<li data-v="buscador">🔍 Buscador</li>
+</ul>
+</nav>
+
+<main>
+
+<div class="view active" id="v-dashboard">
+<h2>Dashboard</h2>
+<div class="cards" id="dashCards"></div>
+<div class="charts">
+<div class="chartbox"><h3>Ingresos (últimos 6 meses)</h3><canvas id="chIngresos" height="180"></canvas></div>
+<div class="chartbox"><h3>Reparaciones por tipo</h3><canvas id="chReparaciones" height="180"></canvas></div>
+<div class="chartbox"><h3>Vehículos por marca</h3><canvas id="chMarcas" height="180"></canvas></div>
+</div>
+</div>
+
+<div class="view" id="v-clientes">
+<h2>Clientes</h2>
+<div class="toolbar"><button onclick="openClienteModal()">+ Nuevo cliente</button></div>
+<table><thead><tr><th>Nombre</th><th>RUT</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th>Gasto total</th><th></th></tr></thead>
+<tbody id="tblClientes"></tbody></table>
+</div>
+
+<div class="view" id="v-vehiculos">
+<h2>Vehículos</h2>
+<div class="toolbar"><button onclick="openVehiculoModal()">+ Nuevo vehículo</button></div>
+<table><thead><tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th><th>Color</th><th>Km</th><th>Cliente</th><th></th></tr></thead>
+<tbody id="tblVehiculos"></tbody></table>
+</div>
+
+<div class="view" id="v-ordenes">
+<h2>Órdenes de trabajo</h2>
+<div class="toolbar"><button onclick="openOrdenModal()">+ Nueva orden</button></div>
+<table><thead><tr><th>N°</th><th>Vehículo</th><th>Cliente</th><th>Mecánico</th><th>Ingreso</th><th>Entrega</th><th>Estado</th><th></th></tr></thead>
+<tbody id="tblOrdenes"></tbody></table>
+</div>
+
+<div class="view" id="v-repuestos">
+<h2>Repuestos</h2>
+<div class="toolbar"><button onclick="openRepuestoModal()">+ Nuevo repuesto</button></div>
+<table><thead><tr><th>Nombre</th><th>Stock</th><th>Precio</th><th>Proveedor</th><th></th></tr></thead>
+<tbody id="tblRepuestos"></tbody></table>
+</div>
+
+<div class="view" id="v-agenda">
+<h2>Agenda</h2>
+<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Vehículo</th><th>Cliente</th><th>Detalle</th></tr></thead>
+<tbody id="tblAgenda"></tbody></table>
+</div>
+
+<div class="view" id="v-estadisticas">
+<h2>Estadísticas</h2>
+<div class="charts">
+<div class="chartbox"><h3>Marcas más atendidas</h3><canvas id="chEMarcas" height="180"></canvas></div>
+<div class="chartbox"><h3>Ingresos por mes</h3><canvas id="chEIngresos" height="180"></canvas></div>
+<div class="chartbox"><h3>Reparaciones más frecuentes</h3><canvas id="chEReparaciones" height="180"></canvas></div>
+</div>
+<div class="cards">
+<div class="card"><div class="val" id="statTiempo">-</div><div class="lbl">⏱ Tiempo promedio por reparación (días)</div></div>
+</div>
+<h3 style="margin:16px 0 10px;color:var(--azul-d);font-size:16px">Clientes frecuentes</h3>
+<table><thead><tr><th>Cliente</th><th>N° órdenes</th><th>Gasto total</th></tr></thead><tbody id="tblFrecuentes"></tbody></table>
+</div>
+
+<div class="view" id="v-buscador">
+<h2>Buscador</h2>
+<div class="toolbar"><input id="searchInput" placeholder="Buscar por patente, cliente, marca o modelo..." style="width:320px" oninput="doSearch()"></div>
+<table><thead><tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Cliente</th><th></th></tr></thead><tbody id="tblBuscador"></tbody></table>
+</div>
+
+</main>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
+<div class="modal-bg" id="fichaBg"><div class="modal" id="fichaBody" style="width:640px"></div></div>
+
+<script>
+const DB = {
+  clientes: JSON.parse(localStorage.getItem('ac_clientes')||'[]'),
+  vehiculos: JSON.parse(localStorage.getItem('ac_vehiculos')||'[]'),
+  ordenes: JSON.parse(localStorage.getItem('ac_ordenes')||'[]'),
+  repuestos: JSON.parse(localStorage.getItem('ac_repuestos')||'[]'),
+};
+function save(k){localStorage.setItem('ac_'+k, JSON.stringify(DB[k]));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+const TIPOS_REPARACION = ['Cambio de aceite','Frenos','Motor','Suspensión','Electricidad','Scanner'];
+const ESTADOS = ['Recibido','En diagnóstico','Esperando repuestos','En reparación','Listo','Entregado'];
+const ESTADO_CLASS = {'Recibido':'b-recibido','En diagnóstico':'b-diagnostico','Esperando repuestos':'b-repuestos','En reparación':'b-reparacion','Listo':'b-listo','Entregado':'b-entregado'};
+
+if(DB.clientes.length===0){
+  DB.clientes=[
+    {id:uid(),nombre:'Juan Pérez',rut:'12.345.678-9',telefono:'+56912345678',correo:'juan.perez@mail.com',direccion:'Av. Providencia 1234, Santiago'},
+    {id:uid(),nombre:'María González',rut:'15.678.234-1',telefono:'+56987654321',correo:'maria.g@mail.com',direccion:'Los Leones 456, Santiago'}
+  ];
+  const c1=DB.clientes[0].id,c2=DB.clientes[1].id;
+  DB.vehiculos=[
+    {id:uid(),patente:'ABCD12',marca:'Toyota',modelo:'Corolla',anio:2020,color:'Blanco',km:45000,clienteId:c1},
+    {id:uid(),patente:'XYZW98',marca:'Hyundai',modelo:'Tucson',anio:2022,color:'Gris',km:18000,clienteId:c2}
+  ];
+  const v1=DB.vehiculos[0].id,v2=DB.vehiculos[1].id;
+  function d(offset){const x=new Date();x.setDate(x.getDate()+offset);return x.toISOString().slice(0,10);}
+  DB.ordenes=[
+    {id:uid(),numero:1001,vehiculoId:v1,clienteId:c1,mecanico:'Carlos Muñoz',fechaIngreso:d(-40),fechaEntrega:d(-38),estado:'Entregado',tipo:'Cambio de aceite',precioManoObra:25000,repuestosUsados:[],observaciones:'Cambio de aceite y filtro'},
+    {id:uid(),numero:1002,vehiculoId:v1,clienteId:c1,mecanico:'Carlos Muñoz',fechaIngreso:d(-10),fechaEntrega:d(-8),estado:'Entregado',tipo:'Frenos',precioManoObra:40000,repuestosUsados:[],observaciones:'Cambio de pastillas delanteras'},
+    {id:uid(),numero:1003,vehiculoId:v2,clienteId:c2,mecanico:'Pedro Silva',fechaIngreso:d(-2),fechaEntrega:d(2),estado:'En reparación',tipo:'Motor',precioManoObra:60000,repuestosUsados:[],observaciones:'Revisión de ruido en motor'}
+  ];
+  DB.repuestos=[
+    {id:uid(),nombre:'Aceite 5W30 (litro)',stock:32,precio:8500,proveedor:'Distribuidora Lubrisur'},
+    {id:uid(),nombre:'Pastillas de freno',stock:14,precio:22000,proveedor:'Frenos Chile'},
+    {id:uid(),nombre:'Filtro de aceite',stock:20,precio:6500,proveedor:'Distribuidora Lubrisur'},
+    {id:uid(),nombre:'Batería 12V',stock:6,precio:65000,proveedor:'Baterías Bosch'},
+    {id:uid(),nombre:'Correa de distribución',stock:9,precio:35000,proveedor:'Repuestos Central'}
+  ];
+  save('clientes');save('vehiculos');save('ordenes');save('repuestos');
+}
+
+document.querySelectorAll('nav li').forEach(li=>{
+  li.onclick=()=>{
+    document.querySelectorAll('nav li').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    li.classList.add('active');
+    document.getElementById('v-'+li.dataset.v).classList.add('active');
+    renderAll();
+  };
+});
+
+const fmt = n => '$'+Number(n||0).toLocaleString('es-CL');
+const cliNombre = id => (DB.clientes.find(c=>c.id===id)||{}).nombre||'-';
+const vehLabel = id => { const v=DB.vehiculos.find(v=>v.id===id); return v? `${v.patente} - ${v.marca} ${v.modelo}`:'-'; };
+const vehById = id => DB.vehiculos.find(v=>v.id===id);
+
+function renderDashboard(){
+  const hoy = new Date().toISOString().slice(0,10);
+  const ingresadosHoy = DB.ordenes.filter(o=>o.fechaIngreso===hoy).length;
+  const activas = DB.ordenes.filter(o=>o.estado!=='Entregado').length;
+  const entregados = DB.ordenes.filter(o=>o.estado==='Entregado').length;
+  const mesActual = new Date().getMonth(), anioActual=new Date().getFullYear();
+  const ingresosMes = DB.ordenes.filter(o=>{const d=new Date(o.fechaEntrega);return o.estado==='Entregado'&&d.getMonth()===mesActual&&d.getFullYear()===anioActual;})
+    .reduce((s,o)=>s+ordenTotal(o),0);
+
+  document.getElementById('dashCards').innerHTML = `
+    <div class="card"><div class="val">${ingresadosHoy}</div><div class="lbl">📅 Vehículos ingresados hoy</div></div>
+    <div class="card"><div class="val">${DB.clientes.length}</div><div class="lbl">👤 Clientes registrados</div></div>
+    <div class="card"><div class="val">${activas}</div><div class="lbl">🔧 Reparaciones activas</div></div>
+    <div class="card"><div class="val">${fmt(ingresosMes)}</div><div class="lbl">💰 Ingresos del mes</div></div>
+    <div class="card"><div class="val">${entregados}</div><div class="lbl">🚘 Vehículos entregados</div></div>`;
+
+  const meses=[]; const labels=[];
+  for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); meses.push({m:d.getMonth(),y:d.getFullYear()}); labels.push(d.toLocaleString('es-CL',{month:'short'})); }
+  const ingresosData = meses.map(({m,y})=> DB.ordenes.filter(o=>{const d=new Date(o.fechaEntrega);return o.estado==='Entregado'&&d.getMonth()===m&&d.getFullYear()===y;}).reduce((s,o)=>s+ordenTotal(o),0));
+  chart('chIngresos','line',labels,[{label:'Ingresos',data:ingresosData,borderColor:'#1a56db',backgroundColor:'rgba(26,86,219,.1)',fill:true,tension:.3}]);
+
+  const repCount = TIPOS_REPARACION.map(t=>DB.ordenes.filter(o=>o.tipo===t).length);
+  chart('chReparaciones','bar',TIPOS_REPARACION,[{label:'Cantidad',data:repCount,backgroundColor:'#1a56db'}]);
+
+  const marcas=[...new Set(DB.vehiculos.map(v=>v.marca))];
+  const marcaCount = marcas.map(m=>DB.vehiculos.filter(v=>v.marca===m).length);
+  chart('chMarcas','doughnut',marcas,[{data:marcaCount,backgroundColor:['#1a56db','#60a5fa','#93c5fd','#1e3a8a','#3b82f6','#bfdbfe']}]);
+}
+function ordenTotal(o){
+  const mo = Number(o.precioManoObra||0);
+  const rep = (o.repuestosUsados||[]).reduce((s,r)=>s+r.precio*r.cantidad,0);
+  return Math.round((mo+rep)*1.19);
+}
+const charts={};
+function chart(id,type,labels,datasets){
+  if(charts[id]) charts[id].destroy();
+  charts[id]=new Chart(document.getElementById(id),{type,data:{labels,datasets},options:{responsive:true,plugins:{legend:{display:type==='doughnut'}}}});
+}
+
+function renderClientes(){
+  document.getElementById('tblClientes').innerHTML = DB.clientes.length? DB.clientes.map(c=>{
+    const gasto = DB.ordenes.filter(o=>o.clienteId===c.id).reduce((s,o)=>s+ordenTotal(o),0);
+    return `<tr><td>${c.nombre}</td><td>${c.rut}</td><td>${c.telefono}</td><td>${c.correo}</td><td>${c.direccion}</td><td>${fmt(gasto)}</td>
+    <td class="actions"><button class="sec" onclick="openClienteModal('${c.id}')">Editar</button><button class="danger" onclick="delItem('clientes','${c.id}')">Eliminar</button></td></tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty">Sin clientes registrados</td></tr>`;
+}
+function openClienteModal(id){
+  const c = id? DB.clientes.find(x=>x.id===id) : {nombre:'',rut:'',telefono:'',correo:'',direccion:''};
+  modal(`<h3>${id?'Editar':'Nuevo'} cliente</h3>
+  <div class="form-row"><label>Nombre</label><input id="f_nombre" value="${c.nombre}"></div>
+  <div class="form-row"><label>RUT</label><input id="f_rut" value="${c.rut}"></div>
+  <div class="form-row"><label>Teléfono</label><input id="f_telefono" value="${c.telefono}"></div>
+  <div class="form-row"><label>Correo</label><input id="f_correo" value="${c.correo}"></div>
+  <div class="form-row"><label>Dirección</label><input id="f_direccion" value="${c.direccion}"></div>
+  <div class="modal-actions"><button class="sec" onclick="closeModal()">Cancelar</button><button onclick="saveCliente('${id||''}')">Guardar</button></div>`);
+}
+function saveCliente(id){
+  const data={nombre:val('f_nombre'),rut:val('f_rut'),telefono:val('f_telefono'),correo:val('f_correo'),direccion:val('f_direccion')};
+  if(id){ Object.assign(DB.clientes.find(c=>c.id===id),data); } else { data.id=uid(); DB.clientes.push(data); }
+  save('clientes'); closeModal(); renderAll();
+}
+
+function renderVehiculos(){
+  document.getElementById('tblVehiculos').innerHTML = DB.vehiculos.length? DB.vehiculos.map(v=>`
+  <tr><td>${v.patente}</td><td>${v.marca}</td><td>${v.modelo}</td><td>${v.anio}</td><td>${v.color}</td><td>${Number(v.km).toLocaleString('es-CL')}</td><td>${cliNombre(v.clienteId)}</td>
+  <td class="actions"><button class="sec" onclick="openFicha('${v.id}')">Ficha</button><button class="sec" onclick="openVehiculoModal('${v.id}')">Editar</button><button class="danger" onclick="delItem('vehiculos','${v.id}')">Eliminar</button></td></tr>`).join('')
+  : `<tr><td colspan="8" class="empty">Sin vehículos registrados</td></tr>`;
+}
+function openVehiculoModal(id){
+  const v = id? DB.vehiculos.find(x=>x.id===id) : {patente:'',marca:'',modelo:'',anio:'',color:'',km:'',clienteId:''};
+  modal(`<h3>${id?'Editar':'Nuevo'} vehículo</h3>
+  <div class="form-row"><label>Patente</label><input id="f_patente" value="${v.patente}"></div>
+  <div class="form-row"><label>Marca</label><input id="f_marca" value="${v.marca}"></div>
+  <div class="form-row"><label>Modelo</label><input id="f_modelo" value="${v.modelo}"></div>
+  <div class="form-row"><label>Año</label><input id="f_anio" type="number" value="${v.anio}"></div>
+  <div class="form-row"><label>Color</label><input id="f_color" value="${v.color}"></div>
+  <div class="form-row"><label>Kilometraje</label><input id="f_km" type="number" value="${v.km}"></div>
+  <div class="form-row"><label>Cliente</label><select id="f_cliente">${DB.clientes.map(c=>`<option value="${c.id}" ${c.id===v.clienteId?'selected':''}>${c.nombre}</option>`).join('')}</select></div>
+  <div class="modal-actions"><button class="sec" onclick="closeModal()">Cancelar</button><button onclick="saveVehiculo('${id||''}')">Guardar</button></div>`);
+}
+function saveVehiculo(id){
+  const data={patente:val('f_patente').toUpperCase(),marca:val('f_marca'),modelo:val('f_modelo'),anio:Number(val('f_anio')),color:val('f_color'),km:Number(val('f_km')),clienteId:val('f_cliente')};
+  if(id){ Object.assign(DB.vehiculos.find(v=>v.id===id),data); } else { data.id=uid(); DB.vehiculos.push(data); }
+  save('vehiculos'); closeModal(); renderAll();
+}
+
+function renderOrdenes(){
+  document.getElementById('tblOrdenes').innerHTML = DB.ordenes.length? DB.ordenes.slice().sort((a,b)=>b.numero-a.numero).map(o=>`
+  <tr><td>#${o.numero}</td><td>${vehLabel(o.vehiculoId)}</td><td>${cliNombre(o.clienteId)}</td><td>${o.mecanico}</td><td>${o.fechaIngreso}</td><td>${o.fechaEntrega}</td>
+  <td><span class="badge ${ESTADO_CLASS[o.estado]}">${o.estado}</span></td>
+  <td class="actions"><button class="sec" onclick="openOrdenModal('${o.id}')">Editar</button><button class="sec" onclick="openFactura('${o.id}')">Factura</button><button class="danger" onclick="delItem('ordenes','${o.id}')">Eliminar</button></td></tr>`).join('')
+  : `<tr><td colspan="8" class="empty">Sin órdenes registradas</td></tr>`;
+}
+function openOrdenModal(id){
+  const o = id? DB.ordenes.find(x=>x.id===id) : {numero:(Math.max(1000,...DB.ordenes.map(o=>o.numero))+1),vehiculoId:'',clienteId:'',mecanico:'',fechaIngreso:new Date().toISOString().slice(0,10),fechaEntrega:'',estado:'Recibido',tipo:TIPOS_REPARACION[0],precioManoObra:'',observaciones:''};
+  modal(`<h3>${id?'Editar':'Nueva'} orden de trabajo</h3>
+  <div class="form-row"><label>Vehículo</label><select id="f_vehiculo">${DB.vehiculos.map(v=>`<option value="${v.id}" ${v.id===o.vehiculoId?'selected':''}>${v.patente} - ${v.marca} ${v.modelo}</option>`).join('')}</select></div>
+  <div class="form-row"><label>Mecánico</label><input id="f_mecanico" value="${o.mecanico}"></div>
+  <div class="form-row"><label>Fecha ingreso</label><input id="f_fingreso" type="date" value="${o.fechaIngreso}"></div>
+  <div class="form-row"><label>Fecha entrega estimada</label><input id="f_fentrega" type="date" value="${o.fechaEntrega}"></div>
+  <div class="form-row"><label>Estado</label><select id="f_estado">${ESTADOS.map(e=>`<option ${e===o.estado?'selected':''}>${e}</option>`).join('')}</select></div>
+  <div class="form-row"><label>Tipo de reparación</label><select id="f_tipo">${TIPOS_REPARACION.map(t=>`<option ${t===o.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+  <div class="form-row"><label>Precio mano de obra</label><input id="f_precio" type="number" value="${o.precioManoObra}"></div>
+  <div class="form-row"><label>Observaciones</label><textarea id="f_obs" rows="2">${o.observaciones||''}</textarea></div>
+  <div class="modal-actions"><button class="sec" onclick="closeModal()">Cancelar</button><button onclick="saveOrden('${id||''}',${o.numero})">Guardar</button></div>`);
+}
+function saveOrden(id,numero){
+  const vehiculoId=val('f_vehiculo'); const veh=vehById(vehiculoId);
+  const data={numero,vehiculoId,clienteId:veh?veh.clienteId:'',mecanico:val('f_mecanico'),fechaIngreso:val('f_fingreso'),fechaEntrega:val('f_fentrega'),estado:val('f_estado'),tipo:val('f_tipo'),precioManoObra:Number(val('f_precio')),repuestosUsados:[],observaciones:val('f_obs')};
+  if(id){ Object.assign(DB.ordenes.find(o=>o.id===id),data); } else { data.id=uid(); DB.ordenes.push(data); }
+  save('ordenes'); closeModal(); renderAll();
+}
+
+function renderRepuestos(){
+  document.getElementById('tblRepuestos').innerHTML = DB.repuestos.length? DB.repuestos.map(r=>`
+  <tr><td>${r.nombre}</td><td>${r.stock<5?'⚠ ':''}${r.stock}</td><td>${fmt(r.precio)}</td><td>${r.proveedor}</td>
+  <td class="actions"><button class="sec" onclick="openRepuestoModal('${r.id}')">Editar</button><button class="danger" onclick="delItem('repuestos','${r.id}')">Eliminar</button></td></tr>`).join('')
+  : `<tr><td colspan="5" class="empty">Sin repuestos registrados</td></tr>`;
+}
+function openRepuestoModal(id){
+  const r = id? DB.repuestos.find(x=>x.id===id) : {nombre:'',stock:'',precio:'',proveedor:''};
+  modal(`<h3>${id?'Editar':'Nuevo'} repuesto</h3>
+  <div class="form-row"><label>Nombre</label><input id="f_nombre" value="${r.nombre}"></div>
+  <div class="form-row"><label>Stock</label><input id="f_stock" type="number" value="${r.stock}"></div>
+  <div class="form-row"><label>Precio</label><input id="f_precio" type="number" value="${r.precio}"></div>
+  <div class="form-row"><label>Proveedor</label><input id="f_proveedor" value="${r.proveedor}"></div>
+  <div class="modal-actions"><button class="sec" onclick="closeModal()">Cancelar</button><button onclick="saveRepuesto('${id||''}')">Guardar</button></div>`);
+}
+function saveRepuesto(id){
+  const data={nombre:val('f_nombre'),stock:Number(val('f_stock')),precio:Number(val('f_precio')),proveedor:val('f_proveedor')};
+  if(id){ Object.assign(DB.repuestos.find(r=>r.id===id),data); } else { data.id=uid(); DB.repuestos.push(data); }
+  save('repuestos'); closeModal(); renderAll();
+}
+
+function renderAgenda(){
+  const items=[];
+  DB.ordenes.forEach(o=>{
+    items.push({fecha:o.fechaIngreso,tipo:'Ingreso',vehiculo:vehLabel(o.vehiculoId),cliente:cliNombre(o.clienteId),detalle:o.tipo});
+    if(o.fechaEntrega) items.push({fecha:o.fechaEntrega,tipo:'Entrega',vehiculo:vehLabel(o.vehiculoId),cliente:cliNombre(o.clienteId),detalle:o.estado});
+  });
+  DB.vehiculos.forEach(v=>{
+    if(v.km % 10000 < 1500){
+      items.push({fecha:new Date().toISOString().slice(0,10),tipo:'Mantenimiento',vehiculo:`${v.patente} - ${v.marca} ${v.modelo}`,cliente:cliNombre(v.clienteId),detalle:'⚠ Necesita cambio de aceite'});
+    }
+  });
+  items.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  document.getElementById('tblAgenda').innerHTML = items.length? items.map(i=>`
+  <tr><td>${i.fecha}</td><td>${i.tipo}</td><td>${i.vehiculo}</td><td>${i.cliente}</td><td>${i.detalle}</td></tr>`).join('')
+  : `<tr><td colspan="5" class="empty">Sin eventos</td></tr>`;
+}
+
+function renderEstadisticas(){
+  const marcas=[...new Set(DB.vehiculos.map(v=>v.marca))];
+  const marcaOrdenes = marcas.map(m=>DB.ordenes.filter(o=>vehById(o.vehiculoId)&&vehById(o.vehiculoId).marca===m).length);
+  chart('chEMarcas','bar',marcas,[{label:'Órdenes',data:marcaOrdenes,backgroundColor:'#1a56db'}]);
+
+  const meses=[]; const labels=[];
+  for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); meses.push({m:d.getMonth(),y:d.getFullYear()}); labels.push(d.toLocaleString('es-CL',{month:'short'})); }
+  const ingresosData = meses.map(({m,y})=> DB.ordenes.filter(o=>{const d=new Date(o.fechaEntrega);return o.estado==='Entregado'&&d.getMonth()===m&&d.getFullYear()===y;}).reduce((s,o)=>s+ordenTotal(o),0));
+  chart('chEIngresos','line',labels,[{label:'Ingresos',data:ingresosData,borderColor:'#1a56db',backgroundColor:'rgba(26,86,219,.1)',fill:true,tension:.3}]);
+
+  const repCount = TIPOS_REPARACION.map(t=>DB.ordenes.filter(o=>o.tipo===t).length);
+  chart('chEReparaciones','doughnut',TIPOS_REPARACION,[{data:repCount,backgroundColor:['#1a56db','#60a5fa','#93c5fd','#1e3a8a','#3b82f6','#bfdbfe']}]);
+
+  const entregadas = DB.ordenes.filter(o=>o.estado==='Entregado'&&o.fechaIngreso&&o.fechaEntrega);
+  const prom = entregadas.length? (entregadas.reduce((s,o)=>s+((new Date(o.fechaEntrega)-new Date(o.fechaIngreso))/86400000),0)/entregadas.length).toFixed(1) : '-';
+  document.getElementById('statTiempo').textContent = prom;
+
+  const porCliente = {};
+  DB.ordenes.forEach(o=>{ porCliente[o.clienteId]=porCliente[o.clienteId]||{n:0,gasto:0}; porCliente[o.clienteId].n++; porCliente[o.clienteId].gasto+=ordenTotal(o); });
+  const filas = Object.entries(porCliente).sort((a,b)=>b[1].n-a[1].n).slice(0,10);
+  document.getElementById('tblFrecuentes').innerHTML = filas.length? filas.map(([cid,d])=>`<tr><td>${cliNombre(cid)}</td><td>${d.n}</td><td>${fmt(d.gasto)}</td></tr>`).join('')
+  : `<tr><td colspan="3" class="empty">Sin datos</td></tr>`;
+}
+
+function doSearch(){
+  const q = val('searchInput').toLowerCase();
+  const res = !q? [] : DB.vehiculos.filter(v=> v.patente.toLowerCase().includes(q) || v.marca.toLowerCase().includes(q) || v.modelo.toLowerCase().includes(q) || cliNombre(v.clienteId).toLowerCase().includes(q));
+  document.getElementById('tblBuscador').innerHTML = res.length? res.map(v=>`
+  <tr><td>${v.patente}</td><td>${v.marca}</td><td>${v.modelo}</td><td>${cliNombre(v.clienteId)}</td><td class="actions"><button class="sec" onclick="openFicha('${v.id}')">Ver ficha</button></td></tr>`).join('')
+  : `<tr><td colspan="5" class="empty">${q? 'Sin resultados':'Escribe para buscar'}</td></tr>`;
+}
+
+function openFicha(vehId){
+  const v = vehById(vehId);
+  const ordenesV = DB.ordenes.filter(o=>o.vehiculoId===vehId).sort((a,b)=>a.fechaIngreso.localeCompare(b.fechaIngreso));
+  const gastoTotal = ordenesV.reduce((s,o)=>s+ordenTotal(o),0);
+  const ultima = ordenesV[ordenesV.length-1];
+  const alerta = v.km % 10000 < 1500 ? `<div class="alert">⚠ Este vehículo necesita cambio de aceite (${Number(v.km).toLocaleString('es-CL')} km).</div>` : '';
+
+  let timelineHtml = '';
+  if(ultima){
+    const idx = ESTADOS.indexOf(ultima.estado);
+    timelineHtml = `<div class="timeline">` + ESTADOS.map((e,i)=>`<span class="tstep ${i<=idx?'done':''}">${e}</span>${i<ESTADOS.length-1?'<span class="tarrow">→</span>':''}`).join('') + `</div>`;
+  }
+
+  document.getElementById('fichaBody').innerHTML = `
+  <h3>Ficha del vehículo: ${v.patente} — ${v.marca} ${v.modelo} (${v.anio})</h3>
+  <p style="font-size:13px;color:var(--gris-d);margin:6px 0">Propietario: ${cliNombre(v.clienteId)} · Color: ${v.color} · Km: ${Number(v.km).toLocaleString('es-CL')}</p>
+  ${alerta}
+  ${timelineHtml}
+  <h4 style="margin:16px 0 8px;color:var(--azul-d);font-size:14px">⭐ Historial de servicios</h4>
+  <table><thead><tr><th>Fecha</th><th>Servicio</th><th>Estado</th><th>Costo</th></tr></thead><tbody>
+  ${ordenesV.length? ordenesV.map(o=>`<tr><td>${o.fechaIngreso}</td><td>${o.tipo}</td><td><span class="badge ${ESTADO_CLASS[o.estado]}">${o.estado}</span></td><td>${fmt(ordenTotal(o))}</td></tr>`).join('') : `<tr><td colspan="4" class="empty">Sin historial</td></tr>`}
+  </tbody></table>
+  <p style="margin-top:14px;font-weight:700;color:var(--azul-d)">💰 Costo total del vehículo: ${fmt(gastoTotal)}</p>
+  <div class="modal-actions"><button class="sec" onclick="closeFicha()">Cerrar</button>${ultima?`<button onclick="printOrden('${ultima.id}')">🖨 Imprimir última orden</button>`:''}</div>`;
+  document.getElementById('fichaBg').classList.add('open');
+}
+function closeFicha(){ document.getElementById('fichaBg').classList.remove('open'); }
+
+function openFactura(ordenId){
+  const o = DB.ordenes.find(x=>x.id===ordenId); const v = vehById(o.vehiculoId);
+  const manoObra = Number(o.precioManoObra||0);
+  const repuestos = (o.repuestosUsados||[]);
+  const subtotalRep = repuestos.reduce((s,r)=>s+r.precio*r.cantidad,0);
+  const neto = manoObra+subtotalRep;
+  const iva = Math.round(neto*0.19);
+  const total = neto+iva;
+  modal(`<div class="factura" id="printArea">
+  <h3>Factura — Orden #${o.numero}</h3>
+  <p>Cliente: ${cliNombre(o.clienteId)} · Vehículo: ${v?v.patente+' - '+v.marca+' '+v.modelo:'-'}</p>
+  <p style="margin-bottom:10px">Fecha: ${o.fechaEntrega||o.fechaIngreso}</p>
+  <table><thead><tr><th>Concepto</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>
+  <tr><td>Mano de obra</td><td>${o.tipo}</td><td>${fmt(manoObra)}</td></tr>
+  ${repuestos.length? repuestos.map(r=>`<tr><td>Repuesto</td><td>${r.nombre} x${r.cantidad}</td><td>${fmt(r.precio*r.cantidad)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Sin repuestos</td></tr>'}
+  <tr><td colspan="2">Neto</td><td>${fmt(neto)}</td></tr>
+  <tr><td colspan="2">IVA (19%)</td><td>${fmt(iva)}</td></tr>
+  <tr><td colspan="2" class="tot">TOTAL</td><td class="tot">${fmt(total)}</td></tr>
+  </tbody></table>
+  </div>
+  <div class="modal-actions no-print"><button class="sec" onclick="closeModal()">Cerrar</button><button onclick="window.print()">🖨 Imprimir</button></div>`);
+}
+function printOrden(ordenId){
+  const o = DB.ordenes.find(x=>x.id===ordenId); const v = vehById(o.vehiculoId);
+  modal(`<div id="printArea">
+  <h3>Orden de trabajo #${o.numero}</h3>
+  <p><b>Cliente:</b> ${cliNombre(o.clienteId)}</p>
+  <p><b>Vehículo:</b> ${v?`${v.patente} - ${v.marca} ${v.modelo} (${v.anio})`:'-'}</p>
+  <p><b>Mecánico:</b> ${o.mecanico}</p>
+  <p><b>Fecha ingreso:</b> ${o.fechaIngreso} &nbsp; <b>Fecha entrega:</b> ${o.fechaEntrega}</p>
+  <p><b>Estado:</b> ${o.estado}</p>
+  <p><b>Tipo de reparación:</b> ${o.tipo}</p>
+  <p><b>Observaciones:</b> ${o.observaciones||'-'}</p>
+  <p><b>Precio mano de obra:</b> ${fmt(o.precioManoObra)}</p>
+  </div>
+  <div class="modal-actions no-print"><button class="sec" onclick="closeModal()">Cerrar</button><button onclick="window.print()">🖨 Imprimir</button></div>`);
+}
+
+function modal(html){ document.getElementById('modalBody').innerHTML=html; document.getElementById('modalBg').classList.add('open'); }
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+function val(id){ return document.getElementById(id).value; }
+function delItem(kind,id){
+  if(!confirm('¿Eliminar este registro?')) return;
+  DB[kind]=DB[kind].filter(x=>x.id!==id); save(kind); renderAll();
+}
+
+function renderAll(){
+  renderDashboard(); renderClientes(); renderVehiculos(); renderOrdenes(); renderRepuestos(); renderAgenda(); renderEstadisticas(); doSearch();
+}
+renderAll();
+</script>
+</body>
+</html>
