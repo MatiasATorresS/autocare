@@ -1,74 +1,102 @@
 # 🚗 AutoCare — Gestión de Taller Mecánico
 
-Atender un taller mecánico implica llevar el rastro de muchísimas cosas: cada cliente, cada vehículo, cada reparación en curso, los repuestos que se gastan y los que hay que pedir. **AutoCare** es un pequeño sistema pensado exactamente para eso: organizar todo el día a día de un taller en una sola herramienta, sencilla de usar y sin necesidad de instalación.
+AutoCare es una aplicación **100% frontend** para administrar el día a día de un taller mecánico: clientes, vehículos, órdenes de trabajo y repuestos. Funciona sin backend, sin build y sin dependencias externas: **abre `index.html` con doble clic y listo**.
 
-Es una aplicación **100% frontend** que corre en el navegador. Está escrita en un único archivo HTML con **JavaScript puro** (sin frameworks, sin build), usa `localStorage` para guardar los datos y Chart.js para los gráficos. Al no depender de módulos ES, **puedes abrirla con doble clic** y funciona al instante.
+La versión 2 es una reconstrucción simple del sistema: cinco secciones claras, diseño responsive, gráficos propios en SVG (sin CDN), navegación por hash, formularios validados e impresión de facturas y órdenes.
 
-## ✨ Qué hace
+---
 
-El taller se organiza en **8 secciones** accesibles desde el menú lateral:
+## ✨ Funcionalidades
 
-- **📊 Dashboard** — El taller de un vistazo: vehículos ingresados hoy, clientes registrados, reparaciones activas, ingresos del mes y vehículos entregados. Con gráficos de ingresos de los últimos meses, reparaciones por tipo y vehículos por marca.
-- **👤 Clientes** — Registro de clientes con su RUT, teléfono, correo y dirección, además de su gasto total acumulado en el taller.
-- **🚘 Vehículos** — Cada vehículo con patente, marca, modelo, año, color, kilometraje y su dueño. Incluye una **ficha completa** con historial de servicios, timeline del estado actual y alerta de mantenimiento.
-- **🔧 Órdenes de trabajo** — El corazón del sistema: órdenes con mecánico asignado, fechas de ingreso y entrega, tipo de reparación, mano de obra y estado. Cada orden genera su **factura** (con IVA 19% incluido) y se puede **imprimir**.
-- **📦 Repuestos** — Inventario de repuestos con stock, precio y proveedor, con alerta visual ⚠ cuando el stock está bajo (menos de 5 unidades).
-- **📅 Agenda** — Ingresos, entregas y avisos de mantenimiento ordenados por fecha, para saber qué se viene.
-- **📈 Estadísticas** — Marcas más atendidas, ingresos por mes, reparaciones más frecuentes, tiempo promedio de reparación y ranking de clientes frecuentes.
-- **🔍 Buscador** — Encuentra cualquier vehículo al instante por patente, cliente, marca o modelo.
+### Secciones
 
-### Flujo de una reparación
+| Sección | Qué incluye |
+|---|---|
+| **Dashboard** | KPIs (ingresos del mes, órdenes activas, ticket promedio, stock en alerta), gráfico de ingresos de los últimos 6 meses, órdenes por estado y últimas órdenes. |
+| **Órdenes de trabajo** | Listado filtrable por estado y buscable, creación/edición con repuestos, totales en vivo (neto + IVA 19%), avance de estado, factura imprimible y eliminación con devolución de stock. |
+| **Clientes** | Directorio con RUT, contacto, dirección, cantidad de vehículos/órdenes y gasto acumulado. Ficha con historial. |
+| **Vehículos** | Patente, marca, modelo, año, color, kilometraje y dueño. Ficha con historial de servicios y alerta de mantención cada 10.000 km. |
+| **Repuestos** | Inventario con stock, stock mínimo, precio y proveedor. Ajuste rápido de stock con botones ± y barras visuales de nivel. |
 
-Cada orden recorre un **timeline de estados** bien claro: `Recibido → En diagnóstico → Esperando repuestos → En reparación → Listo → Entregado`. Así siempre sabes en qué punto está cada auto y qué falta para entregarlo.
+### Extras
+
+- **Atajo `N`** para crear una orden y `Esc` para cerrar diálogos.
+- **Tema** claro u oscuro, recordado entre sesiones.
+- **Responsive**: menú lateral en escritorio y drawer en móvil; las tablas se convierten en tarjetas en pantallas pequeñas.
+- **Persistencia local** bajo `autocare.v2`, con migración automática desde los datos de la versión 1.
+- **Datos de ejemplo** precargados la primera vez (6 clientes, 8 vehículos, 12 órdenes y 10 repuestos).
+
+---
 
 ## 🛠️ Stack
 
 | Tecnología | Uso |
 |---|---|
-| HTML5 + CSS3 | Estructura y estilos (flexbox, grid, variables CSS) |
-| JavaScript puro | Toda la lógica de la app |
-| [Chart.js](https://www.chartjs.org/) | Gráficos del dashboard y estadísticas (vía CDN) |
-| LocalStorage API | Persistencia de datos en el navegador |
+| HTML5 semántico | Estructura de la aplicación y sprite de iconos SVG |
+| CSS3 moderno | Variables, grid, flexbox, modo oscuro, print y responsive |
+| JavaScript puro (ES5+/ES2017) | Lógica, ruteo, componentes y gráficos SVG propios |
+| LocalStorage API | Persistencia sin servidor |
 
-Sin frameworks, sin dependencias de build, sin backend. Un solo archivo `.html` autocontenido (salvo Chart.js que se carga por CDN; si la abres sin internet, la app funciona pero sin gráficos).
+Sin frameworks, sin paquetes npm, sin CDN y sin backend. Todo funciona offline.
+
+---
 
 ## ▶️ Cómo ejecutarlo
 
-Por ser un solo archivo sin módulos ES, **basta con hacer doble clic en `autocare.html`** y se abre en tu navegador. También puedes servirla con cualquier servidor estático si la prefieres:
+### Opción 1: doble clic
+
+Abre **`index.html`** en tu navegador. No necesitas instalar nada ni iniciar un servidor.
+
+> `autocare.html` queda como redirección para no romper enlaces antiguos.
+
+### Opción 2: servidor local
 
 ```bash
-python -m http.server 8000   # luego abre http://localhost:8000/autocare.html
+python -m http.server 8000
 ```
 
-Al abrirla por primera vez se cargan **datos de ejemplo** (2 clientes, 2 vehículos, 3 órdenes y 5 repuestos) para que veas el sistema funcionando con contenido real. Para limpiarlo todo y volver a empezar, abre la consola del navegador y ejecuta:
+Luego visita <http://localhost:8000/>.
 
-```js
-localStorage.clear(); location.reload();
-```
+---
 
 ## 📁 Estructura
 
 ```
 autocare/
-└── autocare.html   # Toda la aplicación en un solo archivo (estilos, HTML y lógica)
+├── index.html               # Shell, sidebar, topbar, modales y sprite SVG
+├── autocare.html            # Redirección al index (compatibilidad v1)
+├── README.md
+└── assets/
+    ├── css/
+    │   └── app.css          # Design system, componentes, responsive y print
+    └── js/
+        ├── core.js          # Helpers, tema, toasts, modales, impresión
+        ├── store.js         # Persistencia, migración, CRUD, stock y métricas
+        ├── charts.js        # Gráficos SVG (línea, barras, dona)
+        ├── views.js         # Vistas, filas, formularios y documentos imprimibles
+        └── app.js           # Ruteo, eventos y acciones
 ```
 
-Debido a su formato de un solo archivo, es muy fácil de transportar, compartir o adaptar: todo el sistema vive en un único `.html`.
+---
 
 ## 🧠 Decisiones técnicas
 
-- **Todo en un solo archivo** para máxima portabilidad: estilos, marcado y JavaScript conviven en `autocare.html`, simplificando su uso en cualquier máquina.
-- **Repositorio en memoria + `localStorage`**: existe un objeto `DB` con clientes, vehículos, órdenes y repuestos que se serializa a `localStorage` (claves `ac_*`) tras cada operación.
-- **Cálculo de totales con IVA chileno**: el total de cada orden suma mano de obra + repuestos y aplica 19% de IVA, con formato de moneda chilena (`$`, es-CL).
-- **Alertas proactivas**: aviso de cambio de aceite según kilometraje (cada ~10.000 km) y de stock bajo de repuestos.
-- **Casos de uso realistas**: los vehículos pertenecen a clientes, las órdenes se vinculan a un vehículo y cliente, y la agenda reúne todo en una sola línea de tiempo.
+- **Identidad visual cálida de taller**: fondo papel crema, acentos óxido y grafito, bordes rectos y tipografía serif en títulos; evita el look genérico de panel SaaS.
+- **Scripts clásicos en vez de módulos ES**: permite que `file://` funcione con doble clic, sin CORS ni servidor.
+- **Gráficos SVG propios**: reemplazan a Chart.js para eliminar la dependencia de CDN y reducir peso; son ligeros, accesibles y respetan el tema.
+- **Store centralizado**: `AC.store` expone CRUD, cálculo de totales, sincronización de stock y métricas. Cada mutación persiste y dispara un rerender de la vista activa.
+- **Renderizado por vista con delegación de eventos**: un solo `data-action` en el DOM y un listener global; las búsquedas locales actualizan solo el `<tbody>`, sin redibujar toda la página.
+- **Stock transaccional**: guardar, editar o eliminar una orden ajusta el inventario con las diferencias entre repuestos anteriores y nuevos.
+- **Escaping de HTML**: todo dato del usuario se escapa antes de inyectarse en el DOM.
+- **IVA chileno**: neto = mano de obra + repuestos; total = neto + 19%, formateado con `es-CL`.
 
-## 🚀 Posibles siguientes pasos
+---
 
-- Vincular repuestos reales a cada orden (hoy el consumo de repuestos se calcula pero no se registra su salida de stock).
-- Impresión/formato PDF de fichas de vehículo, no solo de órdenes y facturas.
-- Mover los datos a una base (SQLite/PostgreSQL + API) para uso multi-taller.
-- Exportar respaldos JSON del inventario y los clientes.
+## 🔄 Migración desde la versión 1
+
+Si ya usabas AutoCare, los datos guardados en `ac_clientes`, `ac_vehiculos`, `ac_ordenes` y `ac_repuestos` se migran automáticamente a `autocare.v2` la primera vez que abres la nueva versión.
+
+Para empezar de cero, borra la clave `autocare.v2` desde las herramientas de desarrollo del navegador (Application → Local Storage) y recarga la página.
 
 ---
 
